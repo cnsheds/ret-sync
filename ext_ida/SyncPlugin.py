@@ -34,6 +34,7 @@ import socket
 import json
 import uuid
 import argparse
+from retsync.synclient import Synclient
 
 from retsync.syncrays import Syncrays
 import retsync.rsconfig as rsconfig
@@ -781,6 +782,7 @@ class RequestHandler(object):
         self.base_remote = None
         self.gm = GraphManager()
         self.hexsync = Syncrays()
+        self.client_mode = False
         self.parser = parser
         self.broker_sock = None
         self.is_active = False
@@ -921,6 +923,7 @@ class CmdHook(ida_kernwin.UI_Hooks):
         idaapi.UI_Hooks.__init__(self)
         self.hooked = {}
         self.bugfixed = False
+        self.cb_ea_changed = None
 
         # 74sp1 BUGFIX: IDAPython: ida_kernwin.UI_Hooks.preprocess_action()
         # wouldn't allow inhibiting the action
@@ -945,6 +948,10 @@ class CmdHook(ida_kernwin.UI_Hooks):
         self.hooked[action_name]()
         return 1
 
+    def screen_ea_changed(self, ea, oldea):
+        if self.cb_ea_changed:
+            self.cb_ea_changed(ea, oldea)
+
 
 # --------------------------------------------------------------------------
 
@@ -953,7 +960,10 @@ class SyncForm_t(PluginForm):
 
     hotkeys_ctx = []
     cmd_hooks = CmdHook()
-
+    sync_client = None
+    client_mode = False
+    autosync = False
+    
     def cb_broker_started(self):
         rs_log("broker started")
         self.btn.setText("Restart")
@@ -979,6 +989,32 @@ class SyncForm_t(PluginForm):
             broker.worker.cb_restore_last_line()
             broker.worker.kill_notice()
             broker.waitForFinished(1500)
+        if self.sync_client:
+            sync_client = self.sync_client
+            self.sync_client = None
+            sync_client.Stop()
+            
+
+    def init_client(self):
+        self.sync_client = Synclient()
+
+        hotkeys_info = (
+            ('F3', self.sync_client.bp_sync_loc),
+        )
+
+        if not self.hotkeys_ctx:
+            for hk_info in hotkeys_info:
+                self.init_single_hotkey(*hk_info)
+
+        # enable ida_kernwin.UI_Hooks
+        if self.cmd_hooks.minver74sp1():
+            self.cmd_hooks.cb_ea_changed = self.cb_ea_changed
+            self.cmd_hooks.hook()
+
+    def cb_ea_changed(self, ea, oldea):
+        if self.sync_client and self.autosync:
+            self.sync_client.bp_sync_loc()
+
 
     def init_broker(self):
         rs_debug("init_broker")
@@ -1075,10 +1111,12 @@ class SyncForm_t(PluginForm):
             rs_log("sync enabled")
             # Restart broker
             self.hotkeys_ctx = []
-            self.init_broker()
+            if self.client_mode:
+                self.init_client()
+            else:
+                self.init_broker()
         else:
-            if self.broker:
-                self.smooth_kill()
+            self.smooth_kill()            
             rs_log("sync disabled\n")
 
     def cb_hexrays_sync_state(self, state):
@@ -1089,6 +1127,22 @@ class SyncForm_t(PluginForm):
             else:
                 rs_log("hexrays sync disabled\n")
                 self.broker.worker.hexsync.disable()
+
+    def cb_client_mode(self, state):
+        if state == QtCore.Qt.Checked:
+            rs_log("client_mode enabled\n")
+            self.client_mode = True
+        else:
+            rs_log("client_mode disabled\n")
+            self.client_mode = False
+
+    def cb_autosync(self, state):
+        if state == QtCore.Qt.Checked:
+            rs_log("AutoSync enabled\n")
+            self.autosync = True
+        else:
+            rs_log("AutoSync disabled\n")
+            self.autosync = False
 
     def cb_hexrays_toggle(self):
         self.cb_hexrays.toggle()
@@ -1142,6 +1196,16 @@ class SyncForm_t(PluginForm):
         self.cb_hexrays.move(20, 20)
         self.cb_hexrays.stateChanged.connect(self.cb_hexrays_sync_state)
 
+        # create as client checkbox
+        self.cb_ClientMode = QtWidgets.QCheckBox('Client Mode')
+        self.cb_ClientMode.move(20, 20)
+        self.cb_ClientMode.stateChanged.connect(self.cb_client_mode)
+
+        # create as client auto sync checkbox
+        self.cb_AutoSync = QtWidgets.QCheckBox('Auto sync')
+        self.cb_AutoSync.move(20, 20)
+        self.cb_AutoSync.stateChanged.connect(self.cb_autosync)
+
         # create label
         label = QtWidgets.QLabel('Overwrite idb name:')
         name = self.handle_name_aliasing()
@@ -1161,11 +1225,13 @@ class SyncForm_t(PluginForm):
         layout = QtWidgets.QGridLayout()
         layout.addWidget(self.cb_sync)
         layout.addWidget(self.cb_hexrays)
+        layout.addWidget(self.cb_ClientMode)
+        layout.addWidget(self.cb_AutoSync)
         layout.addWidget(label)
         layout.addWidget(self.input)
         layout.addWidget(self.btn, 2, 2)
-        layout.setColumnStretch(4, 1)
-        layout.setRowStretch(4, 1)
+        layout.setColumnStretch(6, 1)
+        layout.setRowStretch(6, 1)
         parent.setLayout(layout)
 
         self.parser = argparse.ArgumentParser()
@@ -1173,7 +1239,7 @@ class SyncForm_t(PluginForm):
         self.parser.add_argument('msg', nargs=argparse.REMAINDER)
 
         # synchronization is enabled by default
-        self.cb_sync.toggle()
+        #self.cb_sync.toggle()
 
         # register action for hexrays sync
         action_hex_sync_desc = idaapi.action_desc_t(

@@ -30,6 +30,18 @@ import java.util.Map;
 //@formatter:off
 public class DebuggerDialects {
 
+    private static final HashMap<String, String> IDA_DIALECT = new HashMap<String, String>(
+            Map.ofEntries(
+                    entry("prefix", ""),
+                    entry("si", "t"),
+                    entry("so", "p"),
+                    entry("go", "g"),
+                    entry("bp", "bp "),
+                    entry("hbp", "ba e 1 "),
+                    entry("bp1", "bp /1 "),
+                    entry("hbp1", "ba e 1 /1 ")
+            ));
+
     private static final HashMap<String, String> WINDBG_DIALECT = new HashMap<String, String>(
             Map.ofEntries(
                     entry("prefix", "!"),
@@ -95,6 +107,7 @@ public class DebuggerDialects {
 
     public static final HashMap<String, HashMap<String, String>> DIALECTS = new  HashMap<String, HashMap<String, String>>(
             Map.ofEntries(
+                    entry("ida", IDA_DIALECT),
                     entry("windbg", WINDBG_DIALECT),
                     entry("gdb", GDB_DIALECT),
                     entry("lldb", LLDB_DIALECT),
@@ -102,6 +115,6 @@ public class DebuggerDialects {
                     entry("x64_dbg", X64DBG_DIALECT)
                     ));
 
-    public static final List<String> WINDOWS_BASED_DBG = Arrays.asList("windbg", "ollydbg2", "x64_dbg");
+    public static final List<String> WINDOWS_BASED_DBG = Arrays.asList("windbg", "ollydbg2", "x64_dbg", "ida");
 }
 //@formatter:on
