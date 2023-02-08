@@ -963,7 +963,7 @@ class SyncForm_t(PluginForm):
     sync_client = None
     client_mode = False
     autosync = False
-    
+
     def cb_broker_started(self):
         rs_log("broker started")
         self.btn.setText("Restart")
@@ -993,7 +993,7 @@ class SyncForm_t(PluginForm):
             sync_client = self.sync_client
             self.sync_client = None
             sync_client.Stop()
-            
+
 
     def init_client(self):
         self.sync_client = Synclient()
@@ -1106,6 +1106,11 @@ class SyncForm_t(PluginForm):
             time.sleep(0.1)
         self.cb_sync.toggle()
 
+    def cb_btn_syncfuncs(self):
+        if self.client_mode:
+            self.sync_client.SyncAllFuncs()
+
+
     def cb_change_state(self, state):
         if state == QtCore.Qt.Checked:
             rs_log("sync enabled")
@@ -1116,7 +1121,7 @@ class SyncForm_t(PluginForm):
             else:
                 self.init_broker()
         else:
-            self.smooth_kill()            
+            self.smooth_kill()
             rs_log("sync disabled\n")
 
     def cb_hexrays_sync_state(self, state):
@@ -1221,6 +1226,11 @@ class SyncForm_t(PluginForm):
         self.btn.setToolTip('Restart broker.')
         self.btn.clicked.connect(self.cb_btn_restart)
 
+        # create syncFuncs button
+        self.btn_syncfuncs = QtWidgets.QPushButton('Sync AllFuncs', parent)
+        self.btn_syncfuncs.setToolTip('Sync Funcs define to Server.')
+        self.btn_syncfuncs.clicked.connect(self.cb_btn_syncfuncs)
+
         # create layout
         layout = QtWidgets.QGridLayout()
         layout.addWidget(self.cb_sync)
@@ -1230,6 +1240,7 @@ class SyncForm_t(PluginForm):
         layout.addWidget(label)
         layout.addWidget(self.input)
         layout.addWidget(self.btn, 2, 2)
+        layout.addWidget(self.btn_syncfuncs, 3, 2)
         layout.setColumnStretch(6, 1)
         layout.setRowStretch(6, 1)
         parent.setLayout(layout)

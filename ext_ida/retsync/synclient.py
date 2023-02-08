@@ -204,7 +204,7 @@ class Sync():
 
     def __init__(self, cfg, commands=[]):
         rs_log("init")
-        
+
         self.cfg = cfg
         self.auto = True
         self.pid = None
@@ -226,7 +226,17 @@ class Sync():
     def locate(self):
         self.offset = idaapi.get_screen_ea()
         self.base = idaapi.get_imagebase()
-        self.tunnel.send("[sync]{\"type\":\"loc\",\"base\":%d,\"offset\":%d}\n" % (self.base, self.offset))               
+        self.tunnel.send("[sync]{\"type\":\"loc\",\"base\":%d,\"offset\":%d}\n" % (self.base, self.offset))
+        self.makefunc(self.offset)
+
+    def makefunc(self, ea):
+        self.offset = ea
+        self.base = idaapi.get_imagebase()
+        cur_func = idaapi.get_func(self.offset)
+        if cur_func != None:
+            func_name = idaapi.get_func_name(cur_func.start_ea)
+            self.tunnel.send("[sync]{\"type\":\"addfunc\",\"base\":%d,\"offset\":%d,\"fnstart\":%d,\"fnname\":\"%s\"}\n"
+                             % (self.base, self.offset, cur_func.start_ea, func_name))
 
     def create_poll_timer(self):
         if not self.poller:
@@ -333,7 +343,7 @@ class GoAddr:
 
 def load_configuration():
     user_conf = namedtuple('user_conf', 'host port ctx use_tmp_logging_file')
-    host, port, ctx, use_tmp_logging_file = HOST, PORT, None, USE_TMP_LOGGING_FILE   
+    host, port, ctx, use_tmp_logging_file = HOST, PORT, None, USE_TMP_LOGGING_FILE
 
     return user_conf(host, port, ctx, use_tmp_logging_file)
 
@@ -356,15 +366,20 @@ class Synclient:
             idbname = idaapi.get_root_filename()
             self.SYNC_PLUGIN.tunnel.send("[notice]{\"type\":\"module\",\"path\":\"%s\"}\n" % idbname)
 
-    def Stop(self):            
+    def Stop(self):
         self.SYNC_PLUGIN.reset_state()
         self.SYNC_PLUGIN = None
 
     def bp_sync_loc(self):
         self.SYNC_PLUGIN.locate()
 
+    def SyncAllFuncs(self):
+        func_num = idaapi.get_func_qty()
+        for i in range(0, func_num):
+            self.SYNC_PLUGIN.makefunc(idaapi.getn_func(i).start_ea)
+        rs_log("Sync of all function definitions is completed.\n")
 
 
 if __name__ == "__main__":
-    pass        
-     
+    pass
+
