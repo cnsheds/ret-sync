@@ -374,8 +374,14 @@ public class RequestHandler {
                 rsplugin.clrs.cbColorPost();
                 break;
 
-                // force remote address base for current program
+            // 增加一个函数定义, 用于同步IDA 函数定义到 Ghidra
+            case "addfunc":
+                long func_start = sync.getLong("fnstart");
+                String func_name = sync.getString("fnname");
+                rsplugin.addFunc(base, func_start, func_name);
+                break;
 
+                // force remote address base for current program
             case "rbase":
                 rbase = sync.getLong("rbase");
                 rsplugin.setRemoteBase(rbase);

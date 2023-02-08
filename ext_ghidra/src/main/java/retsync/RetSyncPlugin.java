@@ -33,6 +33,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ghidra.app.cmd.disassemble.DisassembleCommand;
+import ghidra.app.cmd.function.CreateFunctionCmd;
+import ghidra.app.plugin.core.analysis.AutoAnalysisManager;
+import ghidra.program.database.function.OverlappingFunctionException;
+import ghidra.program.model.address.AddressSet;
+import ghidra.program.model.address.AddressSetView;
+import ghidra.util.exception.InvalidInputException;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 
@@ -430,6 +437,32 @@ public class RetSyncPlugin extends ProgramPlugin {
         if (dest != null) {
             gs.goTo(dest);
             clrs.setPrevAddr(dest);
+        }
+    }
+
+    void addFunc(long base, long funcea, String funcname) {
+        boolean res = false;
+        FunctionManager fm;
+        Function func;
+        CreateFunctionCmd cmd;
+
+        Address fnStart = rebase(base, funcea);
+
+        if (fnStart != null) {
+            fm = program.getFunctionManager();
+            func = fm.getFunctionContaining(fnStart);
+
+            if (func == null) {
+                DisassembleCommand disCmd = new DisassembleCommand(fnStart, null, true);
+                doTransaction(disCmd, "sync-add-func_dis");
+
+                cmd = new CreateFunctionCmd(funcname, fnStart, (AddressSetView)null, SourceType.DEFAULT);
+                res = doTransaction(cmd, "sync-add-func");
+            }
+        }
+
+        if (!res) {
+            cs.println(String.format("[sync] failed to add function at address 0x%x", funcea));
         }
     }
 
