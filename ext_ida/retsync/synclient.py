@@ -375,9 +375,17 @@ class Synclient:
 
     def SyncAllFuncs(self):
         func_num = idaapi.get_func_qty()
+        idaapi.show_wait_box("Sync All Functions")
         for i in range(0, func_num):
+            if idaapi.user_cancelled():
+                break
+
+            func_start = idaapi.getn_func(i).start_ea
             self.SYNC_PLUGIN.makefunc(idaapi.getn_func(i).start_ea)
-            time.sleep(0.1)
+            time.sleep(0.01)
+            idaapi.replace_wait_box("sync sub_%08X  (%d/%d)" % (func_start, i, func_num))
+
+        idaapi.hide_wait_box();
         rs_log("Sync of all function definitions is completed.\n")
 
 
