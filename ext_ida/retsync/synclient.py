@@ -377,6 +377,7 @@ class Synclient:
         func_num = idaapi.get_func_qty()
         for i in range(0, func_num):
             self.SYNC_PLUGIN.makefunc(idaapi.getn_func(i).start_ea)
+            time.sleep(0.1)
         rs_log("Sync of all function definitions is completed.\n")
 
 

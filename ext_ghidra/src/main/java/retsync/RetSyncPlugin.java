@@ -20,32 +20,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package retsync;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import ghidra.app.cmd.disassemble.DisassembleCommand;
-import ghidra.app.cmd.function.CreateFunctionCmd;
-import ghidra.app.plugin.core.analysis.AutoAnalysisManager;
-import ghidra.program.database.function.OverlappingFunctionException;
-import ghidra.program.model.address.AddressSet;
-import ghidra.program.model.address.AddressSetView;
-import ghidra.util.exception.InvalidInputException;
-import org.ini4j.Ini;
-import org.ini4j.Profile.Section;
-
 import ghidra.app.CorePluginPackage;
 import ghidra.app.cmd.comments.AppendCommentCmd;
 import ghidra.app.cmd.comments.SetCommentCmd;
+import ghidra.app.cmd.disassemble.DisassembleCommand;
+import ghidra.app.cmd.function.CreateFunctionCmd;
+import ghidra.app.cmd.function.SetFunctionNameCmd;
 import ghidra.app.cmd.function.SetFunctionRepeatableCommentCmd;
 import ghidra.app.cmd.label.AddLabelCmd;
 import ghidra.app.events.ProgramActivatedPluginEvent;
@@ -62,6 +42,7 @@ import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.plugintool.util.PluginStatus;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressOverflowException;
+import ghidra.program.model.address.AddressSetView;
 import ghidra.program.model.listing.CodeUnit;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.FunctionManager;
@@ -70,6 +51,16 @@ import ghidra.program.model.symbol.SourceType;
 import ghidra.program.model.symbol.Symbol;
 import ghidra.program.model.symbol.SymbolTable;
 import ghidra.program.util.ProgramLocation;
+import org.ini4j.Ini;
+import org.ini4j.Profile.Section;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
 // @formatter:off
 @PluginInfo(
@@ -458,6 +449,9 @@ public class RetSyncPlugin extends ProgramPlugin {
 
                 cmd = new CreateFunctionCmd(funcname, fnStart, (AddressSetView)null, SourceType.DEFAULT);
                 res = doTransaction(cmd, "sync-add-func");
+            }else {
+                SetFunctionNameCmd renameCmd = new SetFunctionNameCmd(fnStart, funcname, SourceType.USER_DEFINED);
+                res = doTransaction(renameCmd, "sync-rename");
             }
         }
 
