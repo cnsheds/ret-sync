@@ -14,6 +14,10 @@
 // application.gradle.version property in <GHIDRA_INSTALL_DIR>/Ghidra/application.properties
 // for the correction version of Gradle to use for the Ghidra installation you specify.
 
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
 //----------------------START "DO NOT MODIFY" SECTION------------------------------
 def ghidraInstallDir = "D:/Tools/ghidra"
 
