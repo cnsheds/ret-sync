@@ -963,7 +963,8 @@ class SyncForm_t(PluginForm):
     sync_client = None
     client_mode = False
     autosync = False
-
+    broker = None
+    
     def cb_broker_started(self):
         rs_log("broker started")
         self.btn.setText("Restart")
