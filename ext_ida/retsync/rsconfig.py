@@ -271,3 +271,15 @@ def load_configuration(name=None):
                 break
 
     return user_conf(host, port, alias, path)
+
+def save_configuration(name=None, alias=None):
+    confpath = os.path.join(os.path.realpath(os.environ['IDB_PATH']), '.sync')
+    if name and alias:
+        config = SafeConfigParser()
+        config.read(confpath)
+        if not config.has_section('ALIASES'):
+            config.add_section('ALIASES')
+        config.set('ALIASES', name, alias)
+        with open(confpath, 'w') as configfile:
+            config.write(configfile)
+

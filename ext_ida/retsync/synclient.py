@@ -350,11 +350,11 @@ def load_configuration():
 
 
 class Synclient:
-    def __init__(self):
+    def __init__(self, modname=None):
         self.SYNC_PLUGIN = None
-        self.Start()
+        self.Start(modname)
 
-    def Start(self):
+    def Start(self, modname):
         if self.SYNC_PLUGIN:
             rs_log('plugin already loaded')
         else:
@@ -364,6 +364,8 @@ class Synclient:
             self.SYNC_PLUGIN = Sync(rs_cfg, rs_commands)
             self.SYNC_PLUGIN.startSync("")
             idbname = idaapi.get_root_filename()
+            if modname:
+                idbname = modname
             self.SYNC_PLUGIN.tunnel.send("[notice]{\"type\":\"module\",\"path\":\"%s\"}\n" % idbname)
 
     def Stop(self):

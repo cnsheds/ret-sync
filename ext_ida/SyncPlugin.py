@@ -38,7 +38,7 @@ from retsync.synclient import Synclient
 
 from retsync.syncrays import Syncrays
 import retsync.rsconfig as rsconfig
-from retsync.rsconfig import rs_encode, rs_decode, rs_log, rs_debug, load_configuration
+from retsync.rsconfig import rs_encode, rs_decode, rs_log, rs_debug, load_configuration, save_configuration
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import QProcess, QProcessEnvironment
@@ -997,7 +997,7 @@ class SyncForm_t(PluginForm):
 
 
     def init_client(self):
-        self.sync_client = Synclient()
+        self.sync_client = Synclient(self.handle_name_aliasing())
 
         hotkeys_info = (
             ('F3', self.sync_client.bp_sync_loc),
@@ -1186,6 +1186,13 @@ class SyncForm_t(PluginForm):
         self.pdb_name_warning(name)
         return name
 
+    def handle_set_aliasname(self):
+        name = idaapi.get_root_filename()
+        alias = self.input.text()
+        rs_log("set overwrite idb name to %s" % alias)
+        save_configuration(name, alias)
+        return name
+    
     def OnCreate(self, form):
         rs_debug("form create")
 
@@ -1221,6 +1228,7 @@ class SyncForm_t(PluginForm):
         self.input.setText(name)
         self.input.setMaxLength = 256
         self.input.setFixedWidth(300)
+        self.input.textChanged.connect(self.handle_set_aliasname)
 
         # create restart button
         self.btn = QtWidgets.QPushButton('restart', parent)
