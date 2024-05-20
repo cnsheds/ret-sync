@@ -450,8 +450,11 @@ public class RetSyncPlugin extends ProgramPlugin {
                 cmd = new CreateFunctionCmd(funcname, fnStart, (AddressSetView)null, SourceType.DEFAULT);
                 res = doTransaction(cmd, "sync-add-func");
             }else {
-                SetFunctionNameCmd renameCmd = new SetFunctionNameCmd(fnStart, funcname, SourceType.USER_DEFINED);
-                res = doTransaction(renameCmd, "sync-rename");
+                String funcName = func.getName().toLowerCase();
+                if (funcName.startsWith("sub_") || funcName.startsWith("fun_")) {
+                    SetFunctionNameCmd renameCmd = new SetFunctionNameCmd(fnStart, funcname, SourceType.USER_DEFINED);
+                    res = doTransaction(renameCmd, "sync-rename");
+                }
             }
         }
 
