@@ -927,13 +927,14 @@ class CmdHook(ida_kernwin.UI_Hooks):
 
         # 74sp1 BUGFIX: IDAPython: ida_kernwin.UI_Hooks.preprocess_action()
         # wouldn't allow inhibiting the action
-        pattern = re.compile('preprocess_action\(self, name\) -> int')
+        # 此方法在9.1中失效, doc中没有这个文本了
+        pattern = re.compile(r'preprocess_action\(self, name\) -> int')
         if pattern.search(ida_kernwin.UI_Hooks.preprocess_action.__doc__):
             self.bugfixed = True
 
     def minver74sp1(self):
-        # idaapi.IDA_SDK_VERSION >= 740:
-        return self.bugfixed
+        return idaapi.IDA_SDK_VERSION >= 740
+        #return self.bugfixed
 
     def add_hook(self, action_name, callback):
         self.hooked[action_name] = callback

@@ -283,15 +283,18 @@ public class LocalColorizerService {
                 return;
             }
 
-            if (trigger == EventTrigger.GUI_ACTION) {
-                addTokenPrimaryHighlight(loctok);
-            } else {
-                ClangLine cline = loctok.getLineParent();
-                if (cline != null) {
-                    cline.getAllTokens().forEach((tok) -> {
-                        addTokenPrimaryHighlight(tok);
-                    });
+            try {
+                if (trigger == EventTrigger.GUI_ACTION) {
+                    addTokenPrimaryHighlight(loctok);
+                } else {
+                    ClangLine cline = loctok.getLineParent();
+                    if (cline != null) {
+                        cline.getAllTokens().forEach((tok) -> {
+                            addTokenPrimaryHighlight(tok);
+                        });
+                    }
                 }
+            }catch (Exception e) {
             }
         }
 
