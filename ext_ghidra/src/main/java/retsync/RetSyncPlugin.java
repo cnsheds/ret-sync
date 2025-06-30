@@ -43,7 +43,7 @@ import ghidra.framework.plugintool.util.PluginStatus;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressOverflowException;
 import ghidra.program.model.address.AddressSetView;
-import ghidra.program.model.listing.CodeUnit;
+import ghidra.program.model.listing.CommentType;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.FunctionManager;
 import ghidra.program.model.listing.Program;
@@ -471,7 +471,7 @@ public class RetSyncPlugin extends ProgramPlugin {
         dest = rebase(base, offset);
 
         if (dest != null) {
-            cmd = new AppendCommentCmd(dest, CodeUnit.EOL_COMMENT, msg, ";");
+            cmd = new AppendCommentCmd(dest, CommentType.EOL, msg, ";");
             res = doTransaction(cmd, "sync-add-cmt");
         }
 
@@ -514,7 +514,7 @@ public class RetSyncPlugin extends ProgramPlugin {
         dest = rebase(base, offset);
 
         if (dest != null) {
-            cmd = new SetCommentCmd(dest, CodeUnit.EOL_COMMENT, "");
+            cmd = new SetCommentCmd(dest, CommentType.EOL, "");
             res = doTransaction(cmd, "sync-reset-cmt");
         }
 
