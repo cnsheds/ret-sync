@@ -153,9 +153,10 @@ class Poller(threading.Thread):
         self.evt_enabled.clear()
         self.evt_stop = threading.Event()
         self.evt_stop.clear()
-        self.sync = sync
+        self.sync: Sync = sync
 
     def run(self):
+        last_ping = time.time()  # 新增：记录上次心跳时间
         while True:
             if self.evt_stop.is_set():
                 break
@@ -172,6 +173,15 @@ class Poller(threading.Thread):
             if not self.sync.tunnel:
                 return
 
+            # 新增：每1秒发送一次心跳
+            now = time.time()
+            if now - last_ping >= 5.0:
+                try:
+                    self.sync.tunnel.send("[sync]{\"type\":\"ping\"}\n")
+                except Exception as e:
+                    rs_log(f"Ping failed: {e}")
+                last_ping = now
+
             if self.sync.tunnel.is_up():
                 self.poll()
 
@@ -184,7 +194,7 @@ class Poller(threading.Thread):
     def poll(self):
         msg = self.sync.tunnel.poll()
         if msg:
-            if len(msg) > 1:
+            if len(msg) > 1 and msg.strip() != "[pong]":
                 rs_log(msg)
         else:
             self.stop()
@@ -233,7 +243,7 @@ class Sync():
         self.offset = ea
         self.base = idaapi.get_imagebase()
         cur_func = idaapi.get_func(self.offset)
-        if cur_func != None:
+        if cur_func is not None:
             func_name = idaapi.get_func_name(cur_func.start_ea)
             self.tunnel.send("[sync]{\"type\":\"addfunc\",\"base\":%d,\"offset\":%d,\"fnstart\":%d,\"fnname\":\"%s\"}\n"
                              % (self.base, self.offset, cur_func.start_ea, func_name))

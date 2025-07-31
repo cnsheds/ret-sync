@@ -357,6 +357,11 @@ public class RequestHandler {
             offset = sync.optLong("offset");
 
             switch (type) {
+            case "ping":
+                // handle ping request
+                rsplugin.reqHandler.curClient.sendRaw("[pong]");
+                break;
+
             // location request, update program's listing/graph view
             case "loc":
                 if (rsplugin.program == null) {

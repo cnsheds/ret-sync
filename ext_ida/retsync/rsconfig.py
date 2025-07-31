@@ -21,6 +21,7 @@ import os
 import sys
 import tempfile
 import logging
+import idaapi
 from logging.handlers import RotatingFileHandler
 from collections import namedtuple
 
@@ -38,6 +39,7 @@ except ImportError:
 
 # global plugin settings
 PLUGIN_DIR = 'retsync'
+ida_path = idaapi.idadir("")
 
 # cold storage in IDA database
 NETNODE_STORE = "$ SYNC_STORE"
@@ -185,13 +187,14 @@ PY_WIN_DEFAULTS = set(["C:\\Python27", "C:\\Python27-x64"])
 # default local/user paths Windows platforms
 PY_WIN_LOCAL_DEFAULTS = set()
 
-PY3_RELEASES = ["37", "38", "39", "310"]
+PY3_RELEASES = ["37", "38", "39", "310", "311", "312"]
 
 for py_rel in PY3_RELEASES:
     PY_WIN_DEFAULTS.add("C:\\Program Files\\Python%s" % py_rel)
     PY_WIN_DEFAULTS.add("C:\\Program Files (x86)\\Python%s-32" % py_rel)
     PY_WIN_LOCAL_DEFAULTS.add("%%LOCALAPPDATA%%\\Programs\\Python\\Python%s" % py_rel)
     PY_WIN_LOCAL_DEFAULTS.add("%%LOCALAPPDATA%%\\Programs\\Python\\Python%s-32" % py_rel)
+    PY_WIN_LOCAL_DEFAULTS.add(ida_path + "\\Python%s" % py_rel)
 
 
 # default paths Linux/Mac OS X platforms
@@ -215,6 +218,7 @@ def get_python_interpreter():
                 return interpreter
 
     # otherwise, look in various known default paths
+    
     if sys.platform == 'win32':
         PYTHON_BIN = 'python.exe'
         PYTHON_PATHS = PY_WIN_DEFAULTS
@@ -226,19 +230,18 @@ def get_python_interpreter():
     elif sys.platform.startswith('linux') or sys.platform == 'darwin':
         PYTHON_BIN = 'python'
         PYTHON_PATHS = PY_LINUX_DEFAULTS
-
     else:
         rs_log("plugin initialization failed: unknown platform \"%s\"\n"
                "       please fix PYTHON_PATH/PYTHON_BIN in %s/rsconfig.py\n"
                % (sys.platform, PLUGIN_DIR))
 
         raise RuntimeError
-
+    
     for pp in PYTHON_PATHS:
         interpreter = os.path.realpath(os.path.normpath(os.path.join(pp, PYTHON_BIN)))
         if os.path.exists(interpreter):
-            return interpreter
-
+            return interpreter    
+    
     rs_log("plugin initialization failed: Python interpreter not found\n"
            "       please fix PYTHON_PATH/PYTHON_BIN in %s/rsconfig.py\n" % PLUGIN_DIR)
 

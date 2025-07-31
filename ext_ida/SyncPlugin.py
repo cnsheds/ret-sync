@@ -40,8 +40,9 @@ from retsync.syncrays import Syncrays
 import retsync.rsconfig as rsconfig
 from retsync.rsconfig import rs_encode, rs_decode, rs_log, rs_debug, load_configuration, save_configuration
 
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import QProcess, QProcessEnvironment
+from PySide6 import QtCore, QtWidgets
+from PySide6.QtCore import QProcess, QProcessEnvironment
+
 
 import idc
 import idaapi
@@ -838,7 +839,7 @@ class Broker(QtCore.QProcess):
     def __init__(self, parser):
         QtCore.QProcess.__init__(self)
 
-        self.error.connect(self.cb_on_error)
+        self.errorOccurred.connect(self.cb_on_error)
         self.readyReadStandardOutput.connect(self.cb_broker_on_out)
         self.stateChanged.connect(self.cb_broker_on_state_change)
 
@@ -965,7 +966,7 @@ class SyncForm_t(PluginForm):
     client_mode = False
     autosync = False
     broker = None
-    
+
     def cb_broker_started(self):
         rs_log("broker started")
         self.btn.setText("Restart")
@@ -1114,7 +1115,8 @@ class SyncForm_t(PluginForm):
 
 
     def cb_change_state(self, state):
-        if state == QtCore.Qt.Checked:
+        print("cb_change_state state:", state)
+        if state:
             rs_log("sync enabled")
             # Restart broker
             self.hotkeys_ctx = []
@@ -1128,7 +1130,7 @@ class SyncForm_t(PluginForm):
 
     def cb_hexrays_sync_state(self, state):
         if self.broker:
-            if state == QtCore.Qt.Checked:
+            if state:
                 rs_log("hexrays sync enabled\n")
                 self.broker.worker.hexsync.enable()
             else:
@@ -1136,7 +1138,7 @@ class SyncForm_t(PluginForm):
                 self.broker.worker.hexsync.disable()
 
     def cb_client_mode(self, state):
-        if state == QtCore.Qt.Checked:
+        if state:
             rs_log("client_mode enabled\n")
             self.client_mode = True
         else:
@@ -1144,7 +1146,7 @@ class SyncForm_t(PluginForm):
             self.client_mode = False
 
     def cb_autosync(self, state):
-        if state == QtCore.Qt.Checked:
+        if state:
             rs_log("AutoSync enabled\n")
             self.autosync = True
         else:
@@ -1193,7 +1195,7 @@ class SyncForm_t(PluginForm):
         rs_log("set overwrite idb name to %s" % alias)
         save_configuration(name, alias)
         return name
-    
+
     def OnCreate(self, form):
         rs_debug("form create")
 
